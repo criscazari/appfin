@@ -2,237 +2,412 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Controle Financeiro - Cris</title>
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2c3e50">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle Financeiro</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{font-family:Arial;margin:0;background:#f4f6f9;}
-header{background:#2c3e50;color:white;padding:15px;text-align:center;}
-.topbar{background:#ecf0f1;padding:10px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
-.tabs{display:flex;background:#34495e;}
-.tabs button{flex:1;padding:10px;border:none;background:#34495e;color:white;cursor:pointer;}
-.tabs button:hover{background:#2c3e50;}
-.tabcontent{display:none;padding:20px;}
-.active{display:block;}
-.container{background:white;padding:15px;border-radius:8px;}
-form{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:15px;}
-input,select,button{padding:6px;}
-table{width:100%;border-collapse:collapse;}
-th,td{border:1px solid #ddd;padding:6px;text-align:center;}
-th{background:#2c3e50;color:white;}
-.resumo{margin-top:10px;font-weight:bold;}
+body{
+    font-family:Arial, sans-serif;
+    margin:0;
+    background:#f4f6f9;
+}
+
+header{
+    background:#222;
+    color:#fff;
+    padding:15px;
+    text-align:center;
+    font-size:20px;
+}
+
+.container{
+    padding:15px;
+    max-width:1200px;
+    margin:auto;
+}
+
+.tabs{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:15px;
+}
+
+.tab{
+    padding:8px 15px;
+    background:#ddd;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.tab.active{
+    background:#4CAF50;
+    color:#fff;
+}
+
+.section{
+    display:none;
+}
+
+.section.active{
+    display:block;
+}
+
+form{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:10px;
+    margin-bottom:15px;
+}
+
+input, select, button{
+    padding:8px;
+    font-size:14px;
+}
+
+button{
+    cursor:pointer;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+    background:#fff;
+}
+
+th, td{
+    border:1px solid #ddd;
+    padding:6px;
+    text-align:center;
+}
+
+canvas{
+    max-width:400px;
+    max-height:200px;
+}
+
+.positivo{
+    color:green;
+    font-weight:bold;
+}
+
+.negativo{
+    color:red;
+    font-weight:bold;
+}
+
+@media(max-width:768px){
+
+    form{
+        grid-template-columns: 1fr;
+    }
+
+    table{
+        font-size:12px;
+    }
+
+    input, select, button{
+        font-size:16px;
+    }
+
+    canvas{
+        max-width:100%;
+    }
+}
 </style>
 </head>
 <body>
 
-<header>
-<h2>💰 Controle Financeiro - Cris</h2>
-</header>
+<header>💰 Controle Financeiro</header>
 
-<div class="topbar">
-<select id="mesSelect"></select>
-<input type="number" id="anoSelect">
-<button onclick="carregarMes()">Carregar Mês</button>
-<button onclick="gerarRelatorioAnual()">Relatório Anual</button>
-<button onclick="exportarBackup()">Backup</button>
-<button onclick="importarBackup()">Restaurar</button>
-<input type="file" id="fileInput" style="display:none" onchange="processarImportacao(event)">
-</div>
+<div class="container">
 
 <div class="tabs">
-<button onclick="abrirTab('dashboard')">Dashboard</button>
-<button onclick="abrirTab('fixas')">Fixas</button>
-<button onclick="abrirTab('variaveis')">Variáveis</button>
-<button onclick="abrirTab('lazer')">Lazer</button>
-<button onclick="abrirTab('metas')">Metas</button>
-<button onclick="abrirTab('receitas')">Receitas</button>
+<div class="tab active" onclick="mostrar('dashboard')">Dashboard</div>
+<div class="tab" onclick="mostrar('receitas')">Receitas</div>
+<div class="tab" onclick="mostrar('despesas')">Despesas</div>
 </div>
 
-<div id="dashboard" class="tabcontent active">
-<div class="container">
-<h3>📊 Resumo Geral do Mês</h3>
-<div id="resumoGeral"></div>
-<canvas id="graficoFinanceiro" height="120"></canvas>
-<br>
-<canvas id="graficoCategorias" height="120"></canvas>
-</div>
+<!-- DASHBOARD -->
+<div id="dashboard" class="section active">
+<h3>Resumo do Mês</h3>
+<p id="resumoReceita"></p>
+<p id="resumoDespesa"></p>
+<p id="saldoFinal"></p>
+
+<h4>Gasto por Forma de Pagamento</h4>
+<p id="gastosCartao"></p>
+
+<canvas id="graficoResumo"></canvas>
+<canvas id="graficoCategoria"></canvas>
 </div>
 
-<div id="fixas" class="tabcontent"></div>
-<div id="variaveis" class="tabcontent"></div>
-<div id="lazer" class="tabcontent"></div>
-<div id="metas" class="tabcontent"></div>
-<div id="receitas" class="tabcontent"></div>
+<!-- RECEITAS -->
+<div id="receitas" class="section">
+<h3>Adicionar Receita</h3>
+<form id="formReceita">
+<input type="text" id="descricaoReceita" placeholder="Descrição" required>
+<input type="number" id="valorReceita" placeholder="Valor" required>
+<select id="formaReceita">
+<option>Banco do Brasil</option>
+<option>Nubank</option>
+<option>Pix</option>
+</select>
+<button type="submit">Salvar</button>
+</form>
+
+<table>
+<thead>
+<tr>
+<th>Descrição</th>
+<th>Valor</th>
+<th>Forma</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="listaReceitas"></tbody>
+</table>
+</div>
+
+<!-- DESPESAS -->
+<div id="despesas" class="section">
+<h3>Adicionar Despesa</h3>
+<form id="formDespesa">
+
+<input type="text" id="descricaoDespesa" placeholder="Descrição" required>
+<input type="number" id="valorDespesa" placeholder="Valor Total" required>
+
+<select id="categoriaDespesa">
+<option>🏠 Financiamento</option>
+<option>🛒 Mercado</option>
+<option>🍔 Lanches</option>
+<option>⚡ Energia</option>
+<option>💧 Água</option>
+<option>🎉 Lazer</option>
+</select>
+
+<select id="formaDespesa">
+<option>Banco do Brasil</option>
+<option>Nubank</option>
+<option>Pix</option>
+<option>Cartão</option>
+</select>
+
+<div>
+<label><input type="radio" name="parcelado" value="nao" checked> À Vista</label>
+<label><input type="radio" name="parcelado" value="sim"> Parcelado</label>
+</div>
+
+<input type="number" id="parcelas" placeholder="Parcelas Totais" style="display:none">
+
+<button type="submit">Salvar</button>
+
+</form>
+
+<table>
+<thead>
+<tr>
+<th>Descrição</th>
+<th>Categoria</th>
+<th>Valor</th>
+<th>Forma</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="listaDespesas"></tbody>
+</table>
+</div>
+
+</div>
 
 <script>
-const meses=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const categorias=["🏠 Financiamento","🏠 IPTU","🚗 IPVA","🏍️ Combustível","⚡ Energia","💧 Água e Esgoto","💧 Água Mineral","🥕 Marmitex","🍔 Lanches/ Fast-food/Beb.","🌐 Internet","📱 Celular","🐕 Pets","🎓 Pós-graduação","🏋 Academia","🎉 Lazer","📦 Compras/Shopping","🛒 Mercado","🎁 Presente","💊 Saúde","👚 Vestuário/Calçados/Beleza","🔐 Seguros","✨ Sonhos/Reservas","💰 Empréstimos","🏡 Casa","🛃 Impostos e Taxas","💵 Receitas/Renda Extra","🖊 Assinaturas / Planos","🛍 Compras Parceladas"];
-const formas=["Cartão","Banco do Brasil","Nubank","Porto","Inter","Pix"];
-const tipos=["fixas","variaveis","lazer","metas","receitas"];
 
-let dados={},chaveMesAtual="",grafico,graficoPizza;
+let receitas = JSON.parse(localStorage.getItem("receitas")) || [];
+let despesas = JSON.parse(localStorage.getItem("despesas")) || [];
 
-const hoje=new Date();
-document.getElementById("anoSelect").value=hoje.getFullYear();
-meses.forEach((m,i)=>{
-let opt=document.createElement("option");
-opt.value=i+1;opt.textContent=m;
-if(i===hoje.getMonth())opt.selected=true;
-mesSelect.appendChild(opt);
+function salvarStorage(){
+localStorage.setItem("receitas", JSON.stringify(receitas));
+localStorage.setItem("despesas", JSON.stringify(despesas));
+}
+
+function mostrar(id){
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+event.target.classList.add("active");
+}
+
+document.getElementsByName("parcelado").forEach(r=>{
+r.addEventListener("change",()=>{
+document.getElementById("parcelas").style.display =
+document.querySelector('input[name="parcelado"]:checked').value === "sim"
+? "block" : "none";
 });
-carregarMes();
+});
 
-function gerarChave(){
-return `controleCris_${anoSelect.value}_${mesSelect.value.padStart(2,"0")}`;
-}
-
-function carregarMes(){
-chaveMesAtual=gerarChave();
-dados=JSON.parse(localStorage.getItem(chaveMesAtual))||{};
-tipos.forEach(t=>{if(!dados[t])dados[t]=[]});
-render();
-}
-
-function salvar(){
-localStorage.setItem(chaveMesAtual,JSON.stringify(dados));
-render();
-}
-
-function abrirTab(nome){
-document.querySelectorAll(".tabcontent").forEach(t=>t.classList.remove("active"));
-document.getElementById(nome).classList.add("active");
-}
-
-function criarFormulario(tipo){
-let html=`
-<div class="container">
-<form onsubmit="adicionar(event,'${tipo}')">
-<input required placeholder="Descrição">
-<select required><option value="">Categoria</option>${categorias.map(c=>`<option>${c}</option>`).join("")}</select>
-<input type="number" value="1" min="1">
-<input type="number" step="0.01" required>
-<select>${formas.map(f=>`<option>${f}</option>`).join("")}</select>
-<button>Adicionar</button>
-</form>
-<table>
-<thead><tr><th>Descrição</th><th>Categoria</th><th>Valor Total</th><th>Forma</th><th>X</th></tr></thead>
-<tbody id="tabela_${tipo}"></tbody>
-</table>
-<div class="resumo" id="resumo_${tipo}"></div>
-</div>`;
-document.getElementById(tipo).innerHTML=html;
-}
-
-function adicionar(e,tipo){
+document.getElementById("formReceita").addEventListener("submit",e=>{
 e.preventDefault();
-let f=e.target;
-let item={descricao:f[0].value,categoria:f[1].value,parcelasTotais:parseInt(f[2].value),valor:parseFloat(f[3].value),forma:f[4].value};
-dados[tipo].push(item);
-salvar();
-f.reset();
-}
+
+receitas.push({
+descricao: descricaoReceita.value,
+valor: parseFloat(valorReceita.value),
+forma: formaReceita.value
+});
+
+salvarStorage();
+render();
+e.target.reset();
+});
+
+document.getElementById("formDespesa").addEventListener("submit",e=>{
+e.preventDefault();
+
+despesas.push({
+descricao: descricaoDespesa.value,
+valor: parseFloat(valorDespesa.value),
+categoria: categoriaDespesa.value,
+forma: formaDespesa.value
+});
+
+salvarStorage();
+render();
+e.target.reset();
+parcelas.style.display="none";
+});
 
 function render(){
-let totalReceitas=0,totalDespesas=0,categoriasTotais={};
 
-tipos.forEach(tipo=>{
-let tabela=document.getElementById("tabela_"+tipo);
-if(!tabela)return;
-tabela.innerHTML="";
-let totalTipo=0;
+let listaR="";
+receitas.forEach((r,i)=>{
+listaR+=`
+<tr>
+<td>${r.descricao}</td>
+<td>R$ ${r.valor.toFixed(2)}</td>
+<td>${r.forma}</td>
+<td>
+<button onclick="editarReceita(${i})">✏️</button>
+<button onclick="excluirReceita(${i})">❌</button>
+</td>
+</tr>
+`;
+});
+listaReceitas.innerHTML=listaR;
 
-dados[tipo].forEach((item,i)=>{
-let total=item.valor*item.parcelasTotais;
-totalTipo+=total;
+let listaD="";
+despesas.forEach((d,i)=>{
+listaD+=`
+<tr>
+<td>${d.descricao}</td>
+<td>${d.categoria}</td>
+<td>R$ ${d.valor.toFixed(2)}</td>
+<td>${d.forma}</td>
+<td>
+<button onclick="editarDespesa(${i})">✏️</button>
+<button onclick="excluirDespesa(${i})">❌</button>
+</td>
+</tr>
+`;
+});
+listaDespesas.innerHTML=listaD;
 
-if(tipo==="receitas")totalReceitas+=total;
-else{
-totalDespesas+=total;
-if(!categoriasTotais[item.categoria])categoriasTotais[item.categoria]=0;
-categoriasTotais[item.categoria]+=total;
-}
+let totalR = receitas.reduce((a,b)=>a+b.valor,0);
+let totalD = despesas.reduce((a,b)=>a+b.valor,0);
+let saldo = totalR - totalD;
 
-tabela.innerHTML+=`<tr>
-<td>${item.descricao}</td>
-<td>${item.categoria}</td>
-<td>R$ ${total.toFixed(2)}</td>
-<td>${item.forma}</td>
-<td><button onclick="remover('${tipo}',${i})">X</button></td>
-</tr>`;
+resumoReceita.innerHTML=`Receitas: R$ ${totalR.toFixed(2)}`;
+resumoDespesa.innerHTML=`Despesas: R$ ${totalD.toFixed(2)}`;
+saldoFinal.innerHTML=`Saldo Final: R$ ${saldo.toFixed(2)}`;
+saldoFinal.className = saldo>=0 ? "positivo" : "negativo";
+
+let formas={};
+despesas.forEach(d=>{
+formas[d.forma]=(formas[d.forma]||0)+d.valor;
 });
 
-let texto=(tipo==="receitas")?"Saldo do Mês":"Saldo Devedor do Mês";
-document.getElementById("resumo_"+tipo).innerHTML=`${texto}: R$ ${totalTipo.toFixed(2)}`;
+let texto="";
+for(let f in formas){
+texto+=`${f}: R$ ${formas[f].toFixed(2)}<br>`;
+}
+gastosCartao.innerHTML=texto;
+
+criarGraficos(totalR,totalD);
+}
+
+function editarReceita(i){
+let r=receitas[i];
+descricaoReceita.value=r.descricao;
+valorReceita.value=r.valor;
+formaReceita.value=r.forma;
+receitas.splice(i,1);
+salvarStorage();
+render();
+mostrar("receitas");
+}
+
+function excluirReceita(i){
+receitas.splice(i,1);
+salvarStorage();
+render();
+}
+
+function editarDespesa(i){
+let d=despesas[i];
+descricaoDespesa.value=d.descricao;
+valorDespesa.value=d.valor;
+categoriaDespesa.value=d.categoria;
+formaDespesa.value=d.forma;
+despesas.splice(i,1);
+salvarStorage();
+render();
+mostrar("despesas");
+}
+
+function excluirDespesa(i){
+despesas.splice(i,1);
+salvarStorage();
+render();
+}
+
+let grafico1,grafico2;
+
+function criarGraficos(totalR,totalD){
+
+if(grafico1) grafico1.destroy();
+if(grafico2) grafico2.destroy();
+
+grafico1 = new Chart(graficoResumo,{
+type:"bar",
+data:{
+labels:["Receitas","Despesas"],
+datasets:[{
+data:[totalR,totalD],
+backgroundColor:["green","red"]
+}]
+}
 });
 
-let saldoFinal=totalReceitas-totalDespesas;
-let percentual=totalReceitas>0?((totalDespesas/totalReceitas)*100).toFixed(1):0;
-let cor=saldoFinal>=0?"green":"red";
-
-resumoGeral.innerHTML=`
-<p>💰 Receitas: <strong style="color:green">R$ ${totalReceitas.toFixed(2)}</strong></p>
-<p>💸 Despesas: <strong style="color:red">R$ ${totalDespesas.toFixed(2)}</strong></p>
-<p>📊 Saldo Final: <strong style="color:${cor}">R$ ${saldoFinal.toFixed(2)}</strong></p>
-<p>📈 Comprometimento: ${percentual}%</p>`;
-
-if(grafico)grafico.destroy();
-grafico=new Chart(graficoFinanceiro,{type:"bar",data:{labels:["Receitas","Despesas"],datasets:[{data:[totalReceitas,totalDespesas],backgroundColor:["green","red"]}]},options:{plugins:{legend:{display:false}}}});
-
-if(graficoPizza)graficoPizza.destroy();
-graficoPizza=new Chart(graficoCategorias,{type:"pie",data:{labels:Object.keys(categoriasTotais),datasets:[{data:Object.values(categoriasTotais)}]}});
-}
-
-function remover(tipo,i){dados[tipo].splice(i,1);salvar();}
-
-function gerarRelatorioAnual(){
-let ano=anoSelect.value,total=0;
-for(let m=1;m<=12;m++){
-let chave=`controleCris_${ano}_${String(m).padStart(2,"0")}`;
-let mesDados=JSON.parse(localStorage.getItem(chave))||{};
-tipos.forEach(tipo=>{
-if(mesDados[tipo])mesDados[tipo].forEach(item=>{total+=item.valor*item.parcelasTotais});
+let categorias={};
+despesas.forEach(d=>{
+categorias[d.categoria]=(categorias[d.categoria]||0)+d.valor;
 });
-}
-alert(`Total no ano ${ano}: R$ ${total.toFixed(2)}`);
-}
 
-function exportarBackup(){
-let dadosCompletos={};
-for(let i=0;i<localStorage.length;i++){
-let chave=localStorage.key(i);
-if(chave.startsWith("controleCris_"))dadosCompletos[chave]=JSON.parse(localStorage.getItem(chave));
+grafico2 = new Chart(graficoCategoria,{
+type:"pie",
+data:{
+labels:Object.keys(categorias),
+datasets:[{
+data:Object.values(categorias)
+}]
 }
-let blob=new Blob([JSON.stringify(dadosCompletos,null,2)],{type:"application/json"});
-let a=document.createElement("a");
-a.href=URL.createObjectURL(blob);
-a.download="backup_controle_cris.json";
-a.click();
-}
-
-function importarBackup(){fileInput.click();}
-
-function processarImportacao(e){
-let reader=new FileReader();
-reader.onload=function(ev){
-let dadosImportados=JSON.parse(ev.target.result);
-Object.keys(dadosImportados).forEach(chave=>{
-localStorage.setItem(chave,JSON.stringify(dadosImportados[chave]));
 });
-alert("Backup restaurado!");
-carregarMes();
-};
-reader.readAsText(e.target.files[0]);
+
 }
 
-tipos.forEach(t=>criarFormulario(t));
+render();
 
-if("serviceWorker" in navigator){
-navigator.serviceWorker.register("service-worker.js");
-}
 </script>
 
 </body>
